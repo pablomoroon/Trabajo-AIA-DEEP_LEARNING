@@ -268,7 +268,6 @@ def particion_entr_prueba(X, y, test=0.20):
 
         n_test = int(round(len(indices_clase) * test))
 
-        
         indices_test.extend(indices_clase[:n_test])
         indices_train.extend(indices_clase[n_test:])
 
