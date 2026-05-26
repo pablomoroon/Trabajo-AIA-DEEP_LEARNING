@@ -278,15 +278,22 @@ def particion_entr_prueba(X, y, test=0.20):
     return X[indices_train], X[indices_test], y[indices_train], y[indices_test]
 
 
-np.unique(yp_credito,return_counts=True)
+#Test para probar la funcion de particion_entr_prueba
+iris=load_iris()
+X_iris=iris.data
+y_iris=iris.target
 
+X_train_iris,X_test_iris,y_train_iris,y_test_iris=particion_entr_prueba(X_iris,y_iris,test=0.2)
 
+print("Proporción de clases en el conjunto original:")
+print(np.unique(y_iris,return_counts=True))
+print("\nProporción de clases en el conjunto de entrenamiento:")
+print(np.unique(y_train_iris,return_counts=True))
+print("\nProporción de clases en el conjunto de prueba:")
+print(np.unique(y_test_iris,return_counts=True))
 
-
-
-
-
-
+#muestra de 5 primeros ejemplos del conjunto de entrenamiento
+print("\nPrimeros 5 ejemplos del conjunto de entrenamiento:", X_train_iris[:5])
 
 
 
@@ -424,21 +431,7 @@ class Nodo:
 # Se pide implementar una clase ArbolDecision con el siguiente formato:
   
 
-# class ArbolDecision:
-#     def __init__(self, min_ejemplos_nodo_interior=5, max_prof=10,n_atrs=10,prop_umbral=1.0):
-#         ......
-#                
-#     def entrena(self, X, y):
-#         .......
-#        
-#     def clasifica(self, X):
-#         .......
-#
-#     def clasifica_prob(self, x):
-#         .......
-#
-#     def imprime_arbol(self,nombre_atrs,nombre_clase) :
-#         .......
+
 
 
 
@@ -475,6 +468,94 @@ class Nodo:
 
 # Si se llama al método de clasificación, o al de impresión, antes de entrenar el modelo,
 # se debe devolver (con raise) una excepción:
+
+def CONSTRUYE_ARBOL(X,y,min_ejemplos_nodo_interior,max_prof,prof=0):
+    if(prof>=max_prof or len(X)<min_ejemplos_nodo_interior or len(np.unique(y))==1):
+        return Nodo(clase=np.bincount(y).argmax(), distr={c: np.sum(y==c) for c in np.unique(y)})
+        #la distribución se calcula contando el número de ejemplos de cada clase en y, y guardando esa información en un diccionario
+    else:
+        mascara_izqd=X[:,atributo]<=umbral
+        X_izq=X[mascara_izqd]
+        y_izq=y[mascara_izqd]
+        X_der=X[~mascara_izqd]
+        y_der=y[~mascara_izqd]
+
+
+        return Nodo()
+
+#prop_umbral es la proporción de ejemplos a considerar para elegir los umbrales 
+# candidatos. Por ejemplo, si prop_umbral es 0.7 y el conjunto de ejemplos 
+# correspondientes al nodo es de 200 ejemplos, entonces aplicaremos el proceso
+#  de selección de umbrales candidatos considerando sólo un suconjunto de 140
+# ejemplos seleccionado aleatoriamente de entre esos 200.
+
+#Definimos la funcion mejor_particion que encuentra el mejor atributo y umbral
+# para la partición de los nodos interiores, usando el criterio de mejor GANANCIA 
+# DE INFORMACIÓN, y considerando sólo como candidatos a umbral los puntos medios
+def mejor_particion(X,y,atributos_candidatos,prop_umbral):
+    mejor_ganancia=-1
+    mejor_atributo=None
+    mejor_umbral=None
+
+    #Recorremos los atributos candidatos
+    for atributo in atributos_candidatos:
+        #Para cada atributo, obtenemos los umbrales candidatos usando la función
+        # umbrales, que implementa las dos restricciones que se han descrito más 
+        # arriba para limitar el número de umbrales candidatos.
+        for umbral in umbrales(X[:, atributo], y,prop_umbral):
+            mascara=X[:,atributo]<=umbral
+            y_izq,y_der=y[mascara],y[~mascara]
+            
+            #Comparamos con 0 la ganancia de información de esta partición, para asegurarnos de que
+            #esta partición mejora la clasificación respecto a no particionar, y además comprobamos que
+            #hay ejemplos a ambos lados de la partición, para evitar particiones que no dividen el nodo.
+            if(len(y_izq)==0 or len(y_der)==0):
+                continue
+
+
+#definimos la función ganancia que calcula la ganancia de información de una
+#partición dada por un atributo y un umbral, a partir de los conjuntos de ejemplos
+def ganancia(y,y_izq,y_der):
+    n=len(y)
+    #la ganancia se calcula como la entropía de y menos la media ponderada de 
+    # las entropías de y_izq e y_der, ponderada por el número de ejemplos que hay
+    #  en cada uno de esos conjuntos
+    return entropia(y) - (len(y_izq)/n)*entropia(y_izq) - (len(y_der)/n)*entropia(y_der)
+
+def umbrales(X,y,atributo,prop_umbral):
+    n=len(y)
+    #Seleccionamos aleatoriamente una proporción de los ejemplos correspondientes al nodo
+    n_muestras=max(1,int(round(n*prop_umbral)))
+    indices_muestra=np.random.choice(n,size=n_muestras,replace=False)  
+    X_muestra=X[indices_muestra]
+    y_muestra=y[indices_muestra]
+    
+    #Ordenamos porque sólo consideramos como candidatos a umbral los puntos
+    #  medios entre cada par de valores consecutivos del atributo en los que
+    #  hay cambio de clase, para los ejemplos correspondientes a ese nodo.
+    orden=np.argsort(X_muestra[:,atributo])
+    X_ordenado=X_muestra[orden]
+    y_ordenado=y_muestra[orden]
+
+    candidatos_umbrales=[]
+    for i in range(len(y_ordenado)-1):
+        if y_ordenado[i] != y_ordenado[i+1]: #hay cambio de clase
+            umbral=(X_ordenado[i,atributo]+X_ordenado[i+1,atributo])/2
+            candidatos_umbrales.append(umbral)
+    return candidatos_umbrales
+
+
+
+def entropia(y):
+    #Ponemos _ para indicar que no nos interesa el valor de las clases,
+    # sino sólo sus frecuencias
+    _, counts = np.unique(y, return_counts=True)
+    # Calculamos la entropía
+    probs = counts / len(y)
+    #Ponemos log para que el resultado sea 0 cuando la probabilidad es 0, aunque en principio no debería haber probabilidades 0, porque sólo se consideran umbrales entre valores de clases distintas
+    return -np.sum(probs * np.log2(probs))
+
+#Prueba de construye arbol
 
 class ClasificadorNoEntrenado(Exception): pass
 
