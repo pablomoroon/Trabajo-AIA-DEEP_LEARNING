@@ -96,6 +96,7 @@ from sklearn.model_selection import train_test_split
     
 from carga_datos import *    
 
+
 # Como consecuencia de la línea anterior, se habrán cargado los siguientes 
 # conjuntos de datos, que pasamos a describir, junto con los nombres de las 
 # variables donde se cargan. Todos son arrays de numpy: 
@@ -281,6 +282,7 @@ def particion_entr_prueba(X, y, test=0.20):
 
 
 
+X_train_iris, X_test_iris, y_train_iris, y_test_iris = particion_entr_prueba(X_iris, y_iris, test=0.2)
 
 
 
@@ -411,7 +413,9 @@ class Nodo:
 
 def CONSTRUYE_ARBOL(X,y,atributos_candidatos,min_ejemplos_nodo_interior,max_prof,prop_umbral,prof=0):
     distr={c: np.sum(y==c) for c in np.unique(y)}
-    clase_mayorit= np.bincount(y).argmax()
+    #clase mayoritaria en X y su número de ejemplos en X
+    clases, counts = np.unique(y, return_counts=True)
+    clase_mayorit = clases[np.argmax(counts)]
 
     if(prof>=max_prof or len(X)<min_ejemplos_nodo_interior or len(np.unique(y))==1):
         return Nodo(clase=clase_mayorit, distr=distr)
@@ -558,7 +562,7 @@ class ArbolDecisionNoEntrenado(Exception):
 
 class ArbolDecision: 
     #Esto sirve para indicar  
-    def __init__(self, min_ejemplos_nodo_interior, max_prof, n_atrs, prop_umbral):
+    def __init__(self, min_ejemplos_nodo_interior=5, max_prof=10, n_atrs=None, prop_umbral=1.0):
         self.min_ejemplos_nodo_interior = min_ejemplos_nodo_interior
         self.max_prof = max_prof
         self.n_atrs = n_atrs
@@ -617,17 +621,17 @@ class ArbolDecision:
         # proporción de ejemplos de clase en la distribución del nodo hoja que da la predicción.
         return {clase: count / total_ejemplos for clase, count in nodo_actual.distr.items()}
 
-    def imprime_arbol_recursivo(self, nombres_atributos, nombre_clase):
-        self ._imprime_arbol_recursivo(self.raiz, nombres_atributos, nombre_clase)
+    def imprime_arbol(self, nombres_atributos, nombre_clase):
+        self ._imprime_arbol(self.raiz, nombres_atributos, nombre_clase)
     
-    def _imprime_arbol_recursivo(self, nodo, nombres_atributos, nombre_clase, indent=""):
+    def _imprime_arbol(self, nodo, nombres_atributos, nombre_clase, indent=""):
         if nodo.es_hoja():
             print(f"{indent}{nombre_clase}: {nodo.clase} -- {nodo.distr}")
         else:
             print(f"{indent}{nombres_atributos[nodo.atributo]} <= {nodo.umbral:.3f}")
-            self._imprime_arbol_recursivo(nodo.izq, nombres_atributos, nombre_clase, indent + "     ")
+            self._imprime_arbol(nodo.izq, nombres_atributos, nombre_clase, indent + "     ")
             print(f"{indent}{nombres_atributos[nodo.atributo]} > {nodo.umbral:.3f}")
-            self._imprime_arbol_recursivo(nodo.der, nombres_atributos, nombre_clase, indent + "     ")
+            self._imprime_arbol(nodo.der, nombres_atributos, nombre_clase, indent + "     ")
 
 
 # Algunos ejemplos (los resultados pueden variar, debido a la aleatoriedad)
@@ -1218,56 +1222,56 @@ y_val_dg = y_valid_dg
 # ----------------------------
 
 
-print("\n=============================="
-      "\nAjuste de hiperparámetros para Random Forest"
-      "\n==============================")
+# print("\n=============================="
+#       "\nAjuste de hiperparámetros para Random Forest"
+#       "\n==============================")
 
-#Xev es el conjunto de entrenamiento y validación, y Xp el de prueba. Y lo mismo con las etiquetas.
-Xev_cancer,Xp_cancer,yev_cancer,yp_cancer=particion_entr_prueba(X_cancer,y_cancer,test=0.2)
+# #Xev es el conjunto de entrenamiento y validación, y Xp el de prueba. Y lo mismo con las etiquetas.
+# Xev_cancer,Xp_cancer,yev_cancer,yp_cancer=particion_entr_prueba(X_cancer,y_cancer,test=0.2)
 
-Xe_cancer,Xv_cancer,ye_cancer,yv_cancer=particion_entr_prueba(Xev_cancer,yev_cancer,test=0.2)
+# Xe_cancer,Xv_cancer,ye_cancer,yv_cancer=particion_entr_prueba(Xev_cancer,yev_cancer,test=0.2)
 
-combinaciones_hiperparametros = {
-    "n_arboles": [5,10, 15],
-    "max_prof": [5, 8, 10],
-    "n_atrs": [10,15,20]
-}
+# combinaciones_hiperparametros = {
+#     "n_arboles": [5,10, 15],
+#     "max_prof": [5, 8, 10],
+#     "n_atrs": [10,15,20]
+# }
 
-mejor_combinacion = None
-mejor_rendimiento = -1
+# mejor_combinacion = None
+# mejor_rendimiento = -1
 
-for n_arboles in combinaciones_hiperparametros["n_arboles"]:
-    for max_prof in combinaciones_hiperparametros["max_prof"]:
-        for n_atrs in combinaciones_hiperparametros["n_atrs"]:
-            params = {
-                "n_arboles": n_arboles,
-                "max_prof": max_prof,
-                "n_atrs": n_atrs
-            }
-            rf = RandomForest(
-                n_arboles=params["n_arboles"],
-                max_prof=params["max_prof"],
-                n_atrs=params["n_atrs"]
-            )
-            rf.entrena(Xe_cancer, ye_cancer)
-            rendimiento_validacion = rendimiento(rf, Xv_cancer, yv_cancer)
+# for n_arboles in combinaciones_hiperparametros["n_arboles"]:
+#     for max_prof in combinaciones_hiperparametros["max_prof"]:
+#         for n_atrs in combinaciones_hiperparametros["n_atrs"]:
+#             params = {
+#                 "n_arboles": n_arboles,
+#                 "max_prof": max_prof,
+#                 "n_atrs": n_atrs
+#             }
+#             rf = RandomForest(
+#                 n_arboles=params["n_arboles"],
+#                 max_prof=params["max_prof"],
+#                 n_atrs=params["n_atrs"]
+#             )
+#             rf.entrena(Xe_cancer, ye_cancer)
+#             rendimiento_validacion = rendimiento(rf, Xv_cancer, yv_cancer)
 
-            print(f"Combinación: {params}, Rendimiento validación: {rendimiento_validacion}")
+#             print(f"Combinación: {params}, Rendimiento validación: {rendimiento_validacion}")
 
-            if rendimiento_validacion > mejor_rendimiento:
-                mejor_rendimiento = rendimiento_validacion
-                mejor_combinacion = params
+#             if rendimiento_validacion > mejor_rendimiento:
+#                 mejor_rendimiento = rendimiento_validacion
+#                 mejor_combinacion = params
 
-print(f"Mejor combinación: {mejor_combinacion}")
+# print(f"Mejor combinación: {mejor_combinacion}")
 
-rf_final=RandomForest(
-    n_arboles=mejor_combinacion["n_arboles"],
-    max_prof=mejor_combinacion["max_prof"],
-    n_atrs=mejor_combinacion["n_atrs"]
-)
-rf_final.entrena(Xev_cancer, yev_cancer)
-rendimiento_final = rendimiento(rf_final, Xp_cancer, yp_cancer)
-print(f"Rendimiento final en prueba con la mejor combinación: {rendimiento_final}")
+# rf_final=RandomForest(
+#     n_arboles=mejor_combinacion["n_arboles"],
+#     max_prof=mejor_combinacion["max_prof"],
+#     n_atrs=mejor_combinacion["n_atrs"]
+# )
+# rf_final.entrena(Xev_cancer, yev_cancer)
+# rendimiento_final = rendimiento(rf_final, Xp_cancer, yp_cancer)
+# print(f"Rendimiento final en prueba con la mejor combinación: {rendimiento_final}")
 # ********************************************************************************
 # ********************************************************************************
 # ********************************************************************************
