@@ -624,7 +624,7 @@ class ArbolDecision:
                     nodo_actual = nodo_actual.der
             # En nodo_actual ya estamos en una hoja, y la clase que predice se encuentra en nodo_actual.clase
             predicciones.append(nodo_actual.clase)
-            return np.array(predicciones)  
+        return np.array(predicciones)
 
 
     def clasifica_prob(self, ejemplo):
@@ -1123,6 +1123,7 @@ if datos_credito is None:
 
 datos_credito = np.array(datos_credito)
 
+# Separamos en atributos y etiquetas
 X_credito = datos_credito[:, :6]
 y_credito = datos_credito[:, -1]
 
@@ -1393,16 +1394,56 @@ print("\nTODAS LAS PRUEBAS DEL EJERCICIO 4.1 HAN PASADO CORRECTAMENTE")
 # ----------------------------
 
 
+print("\n=============================="
+      "\nAjuste de hiperparámetros para Random Forest"
+      "\n==============================")
 
+#Xev es el conjunto de entrenamiento y validación, y Xp el de prueba. Y lo mismo con las etiquetas.
+Xev_cancer,Xp_cancer,yev_cancer,yp_cancer=particion_entr_prueba(X_cancer,y_cancer,test=0.2)
 
+Xe_cancer,Xv_cancer,ye_cancer,yv_cancer=particion_entr_prueba(Xev_cancer,yev_cancer,test=0.2)
 
+combinaciones_hiperparametros = {
+    "n_arboles": [5,10, 15],
+    "max_prof": [5, 8, 10],
+    "n_atrs": [10,15,20]
+}
 
+mejor_combinacion = None
+mejor_rendimiento = -1
 
+for n_arboles in combinaciones_hiperparametros["n_arboles"]:
+    for max_prof in combinaciones_hiperparametros["max_prof"]:
+        for n_atrs in combinaciones_hiperparametros["n_atrs"]:
+            params = {
+                "n_arboles": n_arboles,
+                "max_prof": max_prof,
+                "n_atrs": n_atrs
+            }
+            rf = RandomForest(
+                n_arboles=params["n_arboles"],
+                max_prof=params["max_prof"],
+                n_atrs=params["n_atrs"]
+            )
+            rf.entrena(Xe_cancer, ye_cancer)
+            rendimiento_validacion = rendimiento(rf, Xv_cancer, yv_cancer)
 
+            print(f"Combinación: {params}, Rendimiento validación: {rendimiento_validacion}")
 
+            if rendimiento_validacion > mejor_rendimiento:
+                mejor_rendimiento = rendimiento_validacion
+                mejor_combinacion = params
 
+print(f"Mejor combinación: {mejor_combinacion}")
 
-
+rf_final=RandomForest(
+    n_arboles=mejor_combinacion["n_arboles"],
+    max_prof=mejor_combinacion["max_prof"],
+    n_atrs=mejor_combinacion["n_atrs"]
+)
+rf_final.entrena(Xev_cancer, yev_cancer)
+rendimiento_final = rendimiento(rf_final, Xp_cancer, yp_cancer)
+print(f"Rendimiento final en prueba con la mejor combinación: {rendimiento_final}")
 # ********************************************************************************
 # ********************************************************************************
 # ********************************************************************************
