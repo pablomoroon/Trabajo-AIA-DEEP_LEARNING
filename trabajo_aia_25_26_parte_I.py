@@ -1101,7 +1101,39 @@ import pandas as pd
 # * X_train_credito, y_train_credito, X_test_credito, y_test_credito
 #   conteniendo el dataset de crédito con los atributos numñericos:
 
+# ------------------------------------------------
+# Dataset de crédito
+# ------------------------------------------------
 
+from datos.credito import *
+
+# Buscamos automáticamente la variable que contiene la lista de datos
+datos_credito = None
+
+for nombre in list(globals()):
+    valor = globals()[nombre]
+
+    if isinstance(valor, list):
+        if len(valor) > 0 and isinstance(valor[0], list):
+            if len(valor[0]) == 7:
+                datos_credito = valor
+
+if datos_credito is None:
+    raise ValueError("No se ha encontrado la lista de datos de crédito")
+
+datos_credito = np.array(datos_credito)
+
+X_credito = datos_credito[:, :6]
+y_credito = datos_credito[:, -1]
+
+codificador_credito = OrdinalEncoder()
+X_credito = codificador_credito.fit_transform(X_credito)
+
+X_train_credito, X_test_credito, y_train_credito, y_test_credito = particion_entr_prueba(
+    X_credito,
+    y_credito,
+    test=0.25
+)
 
 
 
@@ -1113,7 +1145,37 @@ import pandas as pd
 # * X_train_adult, y_train_adult, X_test_adult, y_test_adult
 #   conteniendo el AdultDataset con los atributos numéricos:
 
+datos_adult = pd.read_csv("datos/adultDataset.csv")
 
+# Quitamos espacios en blanco en las columnas de texto
+datos_adult = datos_adult.replace(r"^\s+|\s+$", "", regex=True)
+
+X_adult = datos_adult.iloc[:, :-1].copy()
+y_adult = datos_adult.iloc[:, -1].values
+
+# Las cuatro primeras columnas ya son numéricas
+X_adult_numericas = X_adult.iloc[:, :4].values.astype(float)
+
+# Desde la quinta columna en adelante son categóricas
+X_adult_categoricas = X_adult.iloc[:, 4:].values
+
+codificador_adult = OrdinalEncoder()
+X_adult_categoricas = codificador_adult.fit_transform(X_adult_categoricas)
+
+X_adult = np.concatenate(
+    [X_adult_numericas, X_adult_categoricas],
+    axis=1
+)
+
+X_train_adult, X_test_adult, y_train_adult, y_test_adult = particion_entr_prueba(
+    X_adult,
+    y_adult,
+    test=0.25
+)
+
+# Por seguridad, forzamos que las y sean arrays de numpy
+y_train_adult = np.array(y_train_adult)
+y_test_adult = np.array(y_test_adult)
 
 
 
@@ -1124,12 +1186,180 @@ import pandas as pd
 # * X_train_dg, y_train_dg, X_valid_dg, y_valid_dg, X_test_dg, y_test_dg
 #   conteniendo el dataset de los dígitos escritos a mano:
     
+import os
+
+def leer_imagenes_digitos(nombre_fichero):
+    with open(nombre_fichero, "r") as f:
+        lineas = f.readlines()
+
+    n_imagenes = len(lineas) // 28
+    X = np.zeros((n_imagenes, 28 * 28), dtype=int)
+
+    for i in range(n_imagenes):
+        for fila in range(28):
+            linea = lineas[i * 28 + fila].rstrip("\n")
+
+            for columna in range(28):
+                if columna < len(linea):
+                    pixel = linea[columna]
+
+                    if pixel == "+" or pixel == "#":
+                        X[i, fila * 28 + columna] = 1
+                    else:
+                        X[i, fila * 28 + columna] = 0
+
+    return X
 
 
+def leer_etiquetas_digitos(nombre_fichero):
+    with open(nombre_fichero, "r") as f:
+        etiquetas = [int(linea.strip()) for linea in f.readlines()]
+
+    return np.array(etiquetas)
 
 
+ruta_digitos = os.path.join("datos", "digitdata")
+
+X_train_dg = leer_imagenes_digitos(os.path.join(ruta_digitos, "trainingimages"))
+y_train_dg = leer_etiquetas_digitos(os.path.join(ruta_digitos, "traininglabels"))
+
+X_valid_dg = leer_imagenes_digitos(os.path.join(ruta_digitos, "validationimages"))
+y_valid_dg = leer_etiquetas_digitos(os.path.join(ruta_digitos, "validationlabels"))
+
+X_test_dg = leer_imagenes_digitos(os.path.join(ruta_digitos, "testimages"))
+y_test_dg = leer_etiquetas_digitos(os.path.join(ruta_digitos, "testlabels"))
+
+# Alias por si en los ejemplos finales usas estos nombres
+X_entr_dg = X_train_dg
+y_entr_dg = y_train_dg
+X_val_dg = X_valid_dg
+y_val_dg = y_valid_dg
 
 
+# =====================================================
+# PRUEBAS PARA COMPROBAR QUE FUNCIONA EL EJERCICIO 4.1
+# =====================================================
+
+def comprobar_dataset(nombre, X_train, y_train, X_test, y_test):
+    print("\n==============================")
+    print("Comprobando dataset:", nombre)
+    print("==============================")
+
+    print("X_train:", X_train.shape)
+    print("y_train:", y_train.shape)
+    print("X_test:", X_test.shape)
+    print("y_test:", y_test.shape)
+
+    assert isinstance(X_train, np.ndarray), "X_train no es un array de numpy"
+    assert isinstance(y_train, np.ndarray), "y_train no es un array de numpy"
+    assert isinstance(X_test, np.ndarray), "X_test no es un array de numpy"
+    assert isinstance(y_test, np.ndarray), "y_test no es un array de numpy"
+
+    assert X_train.shape[0] == y_train.shape[0], "X_train e y_train no tienen el mismo número de ejemplos"
+    assert X_test.shape[0] == y_test.shape[0], "X_test e y_test no tienen el mismo número de ejemplos"
+
+    assert len(X_train.shape) == 2, "X_train no tiene forma de matriz"
+    assert len(X_test.shape) == 2, "X_test no tiene forma de matriz"
+
+    assert X_train.shape[1] == X_test.shape[1], "Train y test no tienen el mismo número de atributos"
+
+    assert np.issubdtype(X_train.dtype, np.number), "X_train no es numérico"
+    assert np.issubdtype(X_test.dtype, np.number), "X_test no es numérico"
+
+    assert not np.isnan(X_train).any(), "Hay valores NaN en X_train"
+    assert not np.isnan(X_test).any(), "Hay valores NaN en X_test"
+
+    print("Clases train:", np.unique(y_train, return_counts=True))
+    print("Clases test:", np.unique(y_test, return_counts=True))
+
+    print("Primer ejemplo de X_train:")
+    print(X_train[0])
+
+    print("OK:", nombre, "cargado correctamente")
+
+
+# Crédito
+comprobar_dataset(
+    "Crédito",
+    X_train_credito,
+    y_train_credito,
+    X_test_credito,
+    y_test_credito
+)
+
+
+# Adult
+comprobar_dataset(
+    "Adult",
+    X_train_adult,
+    y_train_adult,
+    X_test_adult,
+    y_test_adult
+)
+
+
+# Dígitos
+print("\n==============================")
+print("Comprobando dataset: Dígitos")
+print("==============================")
+
+print("X_train_dg:", X_train_dg.shape)
+print("y_train_dg:", y_train_dg.shape)
+print("X_valid_dg:", X_valid_dg.shape)
+print("y_valid_dg:", y_valid_dg.shape)
+print("X_test_dg:", X_test_dg.shape)
+print("y_test_dg:", y_test_dg.shape)
+
+assert isinstance(X_train_dg, np.ndarray), "X_train_dg no es un array de numpy"
+assert isinstance(y_train_dg, np.ndarray), "y_train_dg no es un array de numpy"
+assert isinstance(X_valid_dg, np.ndarray), "X_valid_dg no es un array de numpy"
+assert isinstance(y_valid_dg, np.ndarray), "y_valid_dg no es un array de numpy"
+assert isinstance(X_test_dg, np.ndarray), "X_test_dg no es un array de numpy"
+assert isinstance(y_test_dg, np.ndarray), "y_test_dg no es un array de numpy"
+
+assert X_train_dg.shape[0] == y_train_dg.shape[0], "Train de dígitos mal emparejado"
+assert X_valid_dg.shape[0] == y_valid_dg.shape[0], "Validación de dígitos mal emparejada"
+assert X_test_dg.shape[0] == y_test_dg.shape[0], "Test de dígitos mal emparejado"
+
+assert X_train_dg.shape[1] == 784, "Las imágenes de entrenamiento no tienen 784 píxeles"
+assert X_valid_dg.shape[1] == 784, "Las imágenes de validación no tienen 784 píxeles"
+assert X_test_dg.shape[1] == 784, "Las imágenes de test no tienen 784 píxeles"
+
+assert set(np.unique(X_train_dg)).issubset({0, 1}), "X_train_dg debe contener solo 0 y 1"
+assert set(np.unique(X_valid_dg)).issubset({0, 1}), "X_valid_dg debe contener solo 0 y 1"
+assert set(np.unique(X_test_dg)).issubset({0, 1}), "X_test_dg debe contener solo 0 y 1"
+
+print("Clases train dígitos:", np.unique(y_train_dg, return_counts=True))
+print("Clases valid dígitos:", np.unique(y_valid_dg, return_counts=True))
+print("Clases test dígitos:", np.unique(y_test_dg, return_counts=True))
+
+print("Primer dígito vectorizado:")
+print(X_train_dg[0])
+
+print("OK: Dígitos cargado correctamente")
+
+
+# IMDB ya venía cargado con carga_datos.py
+print("\n==============================")
+print("Comprobando dataset: IMDB")
+print("==============================")
+
+print("X_train_imdb:", X_train_imdb.shape)
+print("y_train_imdb:", y_train_imdb.shape)
+print("X_test_imdb:", X_test_imdb.shape)
+print("y_test_imdb:", y_test_imdb.shape)
+
+assert X_train_imdb.shape[0] == y_train_imdb.shape[0], "Train IMDB mal emparejado"
+assert X_test_imdb.shape[0] == y_test_imdb.shape[0], "Test IMDB mal emparejado"
+assert np.issubdtype(X_train_imdb.dtype, np.number), "X_train_imdb no es numérico"
+assert np.issubdtype(X_test_imdb.dtype, np.number), "X_test_imdb no es numérico"
+
+print("Clases train IMDB:", np.unique(y_train_imdb, return_counts=True))
+print("Clases test IMDB:", np.unique(y_test_imdb, return_counts=True))
+
+print("OK: IMDB cargado correctamente")
+
+print("\nTODAS LAS PRUEBAS DEL EJERCICIO 4.1 HAN PASADO CORRECTAMENTE")
 
 
 # -----------------------------
