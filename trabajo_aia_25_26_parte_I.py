@@ -279,24 +279,6 @@ def particion_entr_prueba(X, y, test=0.20):
     return X[indices_train], X[indices_test], y[indices_train], y[indices_test]
 
 
-#Test para probar la funcion de particion_entr_prueba
-iris=load_iris()
-X_iris=iris.data
-y_iris=iris.target
-
-X_train_iris,X_test_iris,y_train_iris,y_test_iris=particion_entr_prueba(X_iris,y_iris,test=0.2)
-
-print("Proporción de clases en el conjunto original:")
-print(np.unique(y_iris,return_counts=True))
-print("\nProporción de clases en el conjunto de entrenamiento:")
-print(np.unique(y_train_iris,return_counts=True))
-print("\nProporción de clases en el conjunto de prueba:")
-print(np.unique(y_test_iris,return_counts=True))
-
-#muestra de 5 primeros ejemplos del conjunto de entrenamiento
-print("\nPrimeros 5 ejemplos del conjunto de entrenamiento:", X_train_iris[:5])
-
-
 
 
 
@@ -529,20 +511,7 @@ def entropia(y):
     #Ponemos log para que el resultado sea 0 cuando la probabilidad es 0, aunque en principio no debería haber probabilidades 0, porque sólo se consideran umbrales entre valores de clases distintas
     return -np.sum(probs * np.log2(probs))
 
-#Prueba de construye arbol
-X_train, X_test, y_train, y_test = train_test_split(
-    X_iris, y_iris, test_size=0.2, stratify=y_iris, random_state=42
-)
 
-#Sacamos el número de atributos del dataset
-atributos=list(range(X_train.shape[1]))
-
-raiz=CONSTRUYE_ARBOL(X_train,y_train,atributos,min_ejemplos_nodo_interior=5,max_prof=3,prop_umbral=0.7)
-
-print("¿Es hoja la raíz?", raiz.es_hoja())          # debe ser False
-print("Atributo raíz:", raiz.atributo)               # algún número entre 0 y 3
-print("Umbral raíz:", raiz.umbral)                   # algún float
-print("Distribución raíz:", raiz.distr)         # diccionario con las clases y su frecuencia en el nodo raíz
 
 
 
@@ -882,16 +851,7 @@ def rendimiento(clasif,X,y):
 
 
 
-clf = ArbolDecision(5, 10, 4, 1.0)     
-clf.entrena(X_train, y_train)
-clf.imprime_arbol_recursivo(["Long. Sépalo", "Anch. Sépalo", "Long. Pétalo", "Anch. Pétalo"], "Clase")
 
-# rendimiento
-aciertos = sum(clf.clasifica(X_test) == y_test) / len(y_test)
-print("Rendimiento test:", aciertos)
-
-# probabilidades de un ejemplo
-print("Probabilidades ejemplo 0:", clf.clasifica_prob(X_test[0]))
 
 
 
@@ -1032,17 +992,6 @@ class RandomForest:
         return np.array(predicciones)
     
 
-
-
-
-
-
-rf = RandomForest(n_arboles=10, max_prof=3, n_atrs=3)
-rf.entrena(X_train, y_train)
-
-aciertos = sum(rf.clasifica(X_test) == y_test) / len(y_test)
-print("Rendimiento RF test:", aciertos)
-# esperas algo >= que un solo árbol
 
 
 
@@ -1237,131 +1186,6 @@ X_val_dg = X_valid_dg
 y_val_dg = y_valid_dg
 
 
-# =====================================================
-# PRUEBAS PARA COMPROBAR QUE FUNCIONA EL EJERCICIO 4.1
-# =====================================================
-
-def comprobar_dataset(nombre, X_train, y_train, X_test, y_test):
-    print("\n==============================")
-    print("Comprobando dataset:", nombre)
-    print("==============================")
-
-    print("X_train:", X_train.shape)
-    print("y_train:", y_train.shape)
-    print("X_test:", X_test.shape)
-    print("y_test:", y_test.shape)
-
-    assert isinstance(X_train, np.ndarray), "X_train no es un array de numpy"
-    assert isinstance(y_train, np.ndarray), "y_train no es un array de numpy"
-    assert isinstance(X_test, np.ndarray), "X_test no es un array de numpy"
-    assert isinstance(y_test, np.ndarray), "y_test no es un array de numpy"
-
-    assert X_train.shape[0] == y_train.shape[0], "X_train e y_train no tienen el mismo número de ejemplos"
-    assert X_test.shape[0] == y_test.shape[0], "X_test e y_test no tienen el mismo número de ejemplos"
-
-    assert len(X_train.shape) == 2, "X_train no tiene forma de matriz"
-    assert len(X_test.shape) == 2, "X_test no tiene forma de matriz"
-
-    assert X_train.shape[1] == X_test.shape[1], "Train y test no tienen el mismo número de atributos"
-
-    assert np.issubdtype(X_train.dtype, np.number), "X_train no es numérico"
-    assert np.issubdtype(X_test.dtype, np.number), "X_test no es numérico"
-
-    assert not np.isnan(X_train).any(), "Hay valores NaN en X_train"
-    assert not np.isnan(X_test).any(), "Hay valores NaN en X_test"
-
-    print("Clases train:", np.unique(y_train, return_counts=True))
-    print("Clases test:", np.unique(y_test, return_counts=True))
-
-    print("Primer ejemplo de X_train:")
-    print(X_train[0])
-
-    print("OK:", nombre, "cargado correctamente")
-
-
-# Crédito
-comprobar_dataset(
-    "Crédito",
-    X_train_credito,
-    y_train_credito,
-    X_test_credito,
-    y_test_credito
-)
-
-
-# Adult
-comprobar_dataset(
-    "Adult",
-    X_train_adult,
-    y_train_adult,
-    X_test_adult,
-    y_test_adult
-)
-
-
-# Dígitos
-print("\n==============================")
-print("Comprobando dataset: Dígitos")
-print("==============================")
-
-print("X_train_dg:", X_train_dg.shape)
-print("y_train_dg:", y_train_dg.shape)
-print("X_valid_dg:", X_valid_dg.shape)
-print("y_valid_dg:", y_valid_dg.shape)
-print("X_test_dg:", X_test_dg.shape)
-print("y_test_dg:", y_test_dg.shape)
-
-assert isinstance(X_train_dg, np.ndarray), "X_train_dg no es un array de numpy"
-assert isinstance(y_train_dg, np.ndarray), "y_train_dg no es un array de numpy"
-assert isinstance(X_valid_dg, np.ndarray), "X_valid_dg no es un array de numpy"
-assert isinstance(y_valid_dg, np.ndarray), "y_valid_dg no es un array de numpy"
-assert isinstance(X_test_dg, np.ndarray), "X_test_dg no es un array de numpy"
-assert isinstance(y_test_dg, np.ndarray), "y_test_dg no es un array de numpy"
-
-assert X_train_dg.shape[0] == y_train_dg.shape[0], "Train de dígitos mal emparejado"
-assert X_valid_dg.shape[0] == y_valid_dg.shape[0], "Validación de dígitos mal emparejada"
-assert X_test_dg.shape[0] == y_test_dg.shape[0], "Test de dígitos mal emparejado"
-
-assert X_train_dg.shape[1] == 784, "Las imágenes de entrenamiento no tienen 784 píxeles"
-assert X_valid_dg.shape[1] == 784, "Las imágenes de validación no tienen 784 píxeles"
-assert X_test_dg.shape[1] == 784, "Las imágenes de test no tienen 784 píxeles"
-
-assert set(np.unique(X_train_dg)).issubset({0, 1}), "X_train_dg debe contener solo 0 y 1"
-assert set(np.unique(X_valid_dg)).issubset({0, 1}), "X_valid_dg debe contener solo 0 y 1"
-assert set(np.unique(X_test_dg)).issubset({0, 1}), "X_test_dg debe contener solo 0 y 1"
-
-print("Clases train dígitos:", np.unique(y_train_dg, return_counts=True))
-print("Clases valid dígitos:", np.unique(y_valid_dg, return_counts=True))
-print("Clases test dígitos:", np.unique(y_test_dg, return_counts=True))
-
-print("Primer dígito vectorizado:")
-print(X_train_dg[0])
-
-print("OK: Dígitos cargado correctamente")
-
-
-# IMDB ya venía cargado con carga_datos.py
-print("\n==============================")
-print("Comprobando dataset: IMDB")
-print("==============================")
-
-print("X_train_imdb:", X_train_imdb.shape)
-print("y_train_imdb:", y_train_imdb.shape)
-print("X_test_imdb:", X_test_imdb.shape)
-print("y_test_imdb:", y_test_imdb.shape)
-
-assert X_train_imdb.shape[0] == y_train_imdb.shape[0], "Train IMDB mal emparejado"
-assert X_test_imdb.shape[0] == y_test_imdb.shape[0], "Test IMDB mal emparejado"
-assert np.issubdtype(X_train_imdb.dtype, np.number), "X_train_imdb no es numérico"
-assert np.issubdtype(X_test_imdb.dtype, np.number), "X_test_imdb no es numérico"
-
-print("Clases train IMDB:", np.unique(y_train_imdb, return_counts=True))
-print("Clases test IMDB:", np.unique(y_test_imdb, return_counts=True))
-
-print("OK: IMDB cargado correctamente")
-
-print("\nTODAS LAS PRUEBAS DEL EJERCICIO 4.1 HAN PASADO CORRECTAMENTE")
-
 
 # -----------------------------
 # 4.2 AJUSTE DE HIPERPARÁMETROS     
@@ -1475,65 +1299,65 @@ print(f"Rendimiento final en prueba con la mejor combinación: {rendimiento_fina
 
 # *********** DESCOMENTAR A PARTIR DE AQUÍ
 
-# print("************ PRUEBAS EJERCICIO 1:")
-# print("**********************************\n")
-# Xe_votos,Xp_votos,ye_votos,yp_votos=particion_entr_prueba(X_votos,y_votos,test=1/3)
-# print("Partición votos: ",y_votos.shape[0],ye_votos.shape[0],yp_votos.shape[0])
-# print("Proporción original en votos: ",np.unique(y_votos,return_counts=True))
-# print("Estratificación entrenamiento en votos: ",np.unique(ye_votos,return_counts=True))
-# print("Estratificación prueba en votos: ",np.unique(yp_votos,return_counts=True))
-# print("\n")
+print("************ PRUEBAS EJERCICIO 1:")
+print("**********************************\n")
+Xe_votos,Xp_votos,ye_votos,yp_votos=particion_entr_prueba(X_votos,y_votos,test=1/3)
+print("Partición votos: ",y_votos.shape[0],ye_votos.shape[0],yp_votos.shape[0])
+print("Proporción original en votos: ",np.unique(y_votos,return_counts=True))
+print("Estratificación entrenamiento en votos: ",np.unique(ye_votos,return_counts=True))
+print("Estratificación prueba en votos: ",np.unique(yp_votos,return_counts=True))
+print("\n")
 
-# Xev_cancer,Xp_cancer,yev_cancer,yp_cancer=particion_entr_prueba(X_cancer,y_cancer,test=0.2)
-# print("Proporción original en cáncer: ", np.unique(y_cancer,return_counts=True))
-# print("Estratificación entr-val en cáncer: ",np.unique(yev_cancer,return_counts=True))
-# print("Estratificación prueba en cáncer: ",np.unique(yp_cancer,return_counts=True))
-# Xe_cancer,Xv_cancer,ye_cancer,yv_cancer=particion_entr_prueba(Xev_cancer,yev_cancer,test=0.2)
-# print("Estratificación entrenamiento cáncer: ", np.unique(ye_cancer,return_counts=True))
-# print("Estratificación validación cáncer: ",np.unique(yv_cancer,return_counts=True))
-# print("\n")
+Xev_cancer,Xp_cancer,yev_cancer,yp_cancer=particion_entr_prueba(X_cancer,y_cancer,test=0.2)
+print("Proporción original en cáncer: ", np.unique(y_cancer,return_counts=True))
+print("Estratificación entr-val en cáncer: ",np.unique(yev_cancer,return_counts=True))
+print("Estratificación prueba en cáncer: ",np.unique(yp_cancer,return_counts=True))
+Xe_cancer,Xv_cancer,ye_cancer,yv_cancer=particion_entr_prueba(Xev_cancer,yev_cancer,test=0.2)
+print("Estratificación entrenamiento cáncer: ", np.unique(ye_cancer,return_counts=True))
+print("Estratificación validación cáncer: ",np.unique(yv_cancer,return_counts=True))
+print("\n")
 
-# Xe_credito,Xp_credito,ye_credito,yp_credito=particion_entr_prueba(X_credito,y_credito,test=0.4)
-# print("Estratificación entrenamiento crédito: ",np.unique(ye_credito,return_counts=True))
-# print("Estratificación prueba crédito: ",np.unique(yp_credito,return_counts=True))
-# print("\n\n\n")
-
-
-
-
-
-# print("************ PRUEBAS EJERCICIO 2:")
-# print("**********************************\n")
-
-# clf_titanic = ArbolDecision(max_prof=3,min_ejemplos_nodo_interior=5,n_atrs=3)
-# clf_titanic.entrena(X_train_titanic, y_train_titanic)
-# clf_titanic.imprime_arbol(["Pclass", "Mujer", "Edad"],"Partido")
-# rend_train_titanic = rendimiento(clf_titanic,X_train_titanic,y_train_titanic)
-# rend_test_titanic = rendimiento(clf_titanic,X_test_titanic,y_test_titanic)
-# print(f"****** Rendimiento DT titanic train: {rend_train_titanic}")
-# print(f"****** Rendimiento DT titanic test: {rend_test_titanic}\n\n\n\n ")
+Xe_credito,Xp_credito,ye_credito,yp_credito=particion_entr_prueba(X_credito,y_credito,test=0.4)
+print("Estratificación entrenamiento crédito: ",np.unique(ye_credito,return_counts=True))
+print("Estratificación prueba crédito: ",np.unique(yp_credito,return_counts=True))
+print("\n\n\n")
 
 
 
 
-# clf_votos = ArbolDecision(min_ejemplos_nodo_interior=3,max_prof=5,n_atrs=16)
-# clf_votos.entrena(Xe_votos, ye_votos)
-# nombre_atrs_votos=[f"Votación {i}" for i in range(1,17)]
-# clf_votos.imprime_arbol(nombre_atrs_votos,"Partido")
-# rend_train_votos = rendimiento(clf_votos,Xe_votos,ye_votos)
-# rend_test_votos = rendimiento(clf_votos,Xp_votos,yp_votos)
-# print(f"****** Rendimiento DT votos en train: {rend_train_votos}")
-# print(f"****** Rendimiento DT votos en test:  {rend_test_votos}\n\n\n\n")
+
+print("************ PRUEBAS EJERCICIO 2:")
+print("**********************************\n")
+
+clf_titanic = ArbolDecision(max_prof=3,min_ejemplos_nodo_interior=5,n_atrs=3)
+clf_titanic.entrena(X_train_titanic, y_train_titanic)
+clf_titanic.imprime_arbol(["Pclass", "Mujer", "Edad"],"Partido")
+rend_train_titanic = rendimiento(clf_titanic,X_train_titanic,y_train_titanic)
+rend_test_titanic = rendimiento(clf_titanic,X_test_titanic,y_test_titanic)
+print(f"****** Rendimiento DT titanic train: {rend_train_titanic}")
+print(f"****** Rendimiento DT titanic test: {rend_test_titanic}\n\n\n\n ")
 
 
 
-# clf_iris = ArbolDecision(max_prof=3,n_atrs=4)
-# clf_iris.entrena(X_train_iris, y_train_iris)
-# clf_iris.imprime_arbol(["Long. Sépalo", "Anch. Sépalo", "Long. Pétalo", "Anch. Pétalo"],"Clase")
-# rend_train_iris = rendimiento(clf_iris,X_train_iris,y_train_iris)
-# rend_test_iris = rendimiento(clf_iris,X_test_iris,y_test_iris)
-# print(f"********************* Rendimiento DT iris train: {rend_train_iris}")
-# print(f"********************* Rendimiento DT iris test: {rend_test_iris}\n\n\n\n ")
+
+clf_votos = ArbolDecision(min_ejemplos_nodo_interior=3,max_prof=5,n_atrs=16)
+clf_votos.entrena(Xe_votos, ye_votos)
+nombre_atrs_votos=[f"Votación {i}" for i in range(1,17)]
+clf_votos.imprime_arbol(nombre_atrs_votos,"Partido")
+rend_train_votos = rendimiento(clf_votos,Xe_votos,ye_votos)
+rend_test_votos = rendimiento(clf_votos,Xp_votos,yp_votos)
+print(f"****** Rendimiento DT votos en train: {rend_train_votos}")
+print(f"****** Rendimiento DT votos en test:  {rend_test_votos}\n\n\n\n")
+
+
+
+clf_iris = ArbolDecision(max_prof=3,n_atrs=4)
+clf_iris.entrena(X_train_iris, y_train_iris)
+clf_iris.imprime_arbol(["Long. Sépalo", "Anch. Sépalo", "Long. Pétalo", "Anch. Pétalo"],"Clase")
+rend_train_iris = rendimiento(clf_iris,X_train_iris,y_train_iris)
+rend_test_iris = rendimiento(clf_iris,X_test_iris,y_test_iris)
+print(f"********************* Rendimiento DT iris train: {rend_train_iris}")
+print(f"********************* Rendimiento DT iris test: {rend_test_iris}\n\n\n\n ")
 
 
 
