@@ -277,7 +277,7 @@ def particion_entr_prueba(X, y, test=0.20):
     indices_train = np.array(sorted(indices_train))
     indices_test = np.array(sorted(indices_test))
 
-    return X[indices_train], X[indices_test], y[indices_train], y[indices_test]
+    return X[indices_train], X[indices_test], y[indices_train].ravel(), y[indices_test].ravel()
 
 
 
@@ -1226,52 +1226,52 @@ y_val_dg = y_valid_dg
 #       "\nAjuste de hiperparámetros para Random Forest"
 #       "\n==============================")
 
-# #Xev es el conjunto de entrenamiento y validación, y Xp el de prueba. Y lo mismo con las etiquetas.
-# Xev_cancer,Xp_cancer,yev_cancer,yp_cancer=particion_entr_prueba(X_cancer,y_cancer,test=0.2)
+def ajuste_hiperparametros(X_train, y_train, X_test, y_test, combinaciones, nombre=""):
+    """
+    Busca la mejor combinación de hiperparámetros usando validación,
+    reentrena con train+validación y evalúa en test.
+    """
+    # separamos validación del train
+    #Xev es el conjunto de entrenamiento y validación, y Xp el de prueba. Y lo mismo con las etiquetas.
+    Xe, Xv, ye, yv = particion_entr_prueba(X_train, y_train, test=0.2)
 
-# Xe_cancer,Xv_cancer,ye_cancer,yv_cancer=particion_entr_prueba(Xev_cancer,yev_cancer,test=0.2)
+    mejor_combinacion = None
+    mejor_rendimiento = -1
 
-# combinaciones_hiperparametros = {
-#     "n_arboles": [5,10, 15],
-#     "max_prof": [5, 8, 10],
-#     "n_atrs": [10,15,20]
-# }
+    for n_arboles in combinaciones["n_arboles"]:
+        for max_prof in combinaciones["max_prof"]:
+            for n_atrs in combinaciones["n_atrs"]:
+                rf = RandomForest(n_arboles=n_arboles, max_prof=max_prof, n_atrs=n_atrs)
+                rf.entrena(Xe, ye)
+                rend_val = rendimiento(rf, Xv, yv)
+                print(f"  n_arboles={n_arboles}, max_prof={max_prof}, n_atrs={n_atrs} → val: {rend_val:.4f}")
 
-# mejor_combinacion = None
-# mejor_rendimiento = -1
+                if rend_val > mejor_rendimiento:
+                    mejor_rendimiento = rend_val
+                    mejor_combinacion = {"n_arboles": n_arboles, "max_prof": max_prof, "n_atrs": n_atrs}
 
-# for n_arboles in combinaciones_hiperparametros["n_arboles"]:
-#     for max_prof in combinaciones_hiperparametros["max_prof"]:
-#         for n_atrs in combinaciones_hiperparametros["n_atrs"]:
-#             params = {
-#                 "n_arboles": n_arboles,
-#                 "max_prof": max_prof,
-#                 "n_atrs": n_atrs
-#             }
-#             rf = RandomForest(
-#                 n_arboles=params["n_arboles"],
-#                 max_prof=params["max_prof"],
-#                 n_atrs=params["n_atrs"]
-#             )
-#             rf.entrena(Xe_cancer, ye_cancer)
-#             rendimiento_validacion = rendimiento(rf, Xv_cancer, yv_cancer)
+    print(f"\nMejor combinación {nombre}: {mejor_combinacion}")
+    print(f"Rendimiento validación: {mejor_rendimiento:.4f}")
 
-#             print(f"Combinación: {params}, Rendimiento validación: {rendimiento_validacion}")
+    # reentrenamos con todo el train y evaluamos en test
+    rf_final = RandomForest(
+        n_arboles=mejor_combinacion["n_arboles"],
+        max_prof=mejor_combinacion["max_prof"],
+        n_atrs=mejor_combinacion["n_atrs"]
+    )
+    rf_final.entrena(X_train, y_train)
+    rend_test = rendimiento(rf_final, X_test, y_test)
+    print(f"Rendimiento test: {rend_test:.4f}")
 
-#             if rendimiento_validacion > mejor_rendimiento:
-#                 mejor_rendimiento = rendimiento_validacion
-#                 mejor_combinacion = params
+    return mejor_combinacion, rf_final
 
-# print(f"Mejor combinación: {mejor_combinacion}")
-
-# rf_final=RandomForest(
-#     n_arboles=mejor_combinacion["n_arboles"],
-#     max_prof=mejor_combinacion["max_prof"],
-#     n_atrs=mejor_combinacion["n_atrs"]
-# )
-# rf_final.entrena(Xev_cancer, yev_cancer)
-# rendimiento_final = rendimiento(rf_final, Xp_cancer, yp_cancer)
-# print(f"Rendimiento final en prueba con la mejor combinación: {rendimiento_final}")
+# CÁNCER
+Xev_cancer, Xp_cancer, yev_cancer, yp_cancer = particion_entr_prueba(X_cancer, y_cancer, test=0.2)
+mejor_cancer, rf_cancer = ajuste_hiperparametros(
+    Xev_cancer, yev_cancer, Xp_cancer, yp_cancer,
+    combinaciones={"n_arboles": [5,10,15], "max_prof": [5,8,10], "n_atrs": [10,15,20]},
+    nombre="Cáncer"
+)
 # ********************************************************************************
 # ********************************************************************************
 # ********************************************************************************
@@ -1367,28 +1367,28 @@ print(f"********************* Rendimiento DT iris test: {rend_test_iris}\n\n\n\n
 
 
 
-# clf_cancer = ArbolDecision(min_ejemplos_nodo_interior=3,max_prof=10,n_atrs=15)
-# clf_cancer.entrena(Xev_cancer, yev_cancer)
-# nombre_atrs_cancer=['mean radius', 'mean texture', 'mean perimeter', 'mean area',
-#         'mean smoothness', 'mean compactness', 'mean concavity',
-#         'mean concave points', 'mean symmetry', 'mean fractal dimension',
-#         'radius error', 'texture error', 'perimeter error', 'area error',
-#         'smoothness error', 'compactness error', 'concavity error',
-#         'concave points error', 'symmetry error',
-#         'fractal dimension error', 'worst radius', 'worst texture',
-#         'worst perimeter', 'worst area', 'worst smoothness',
-#         'worst compactness', 'worst concavity', 'worst concave points',
-#         'worst symmetry', 'worst fractal dimension']
-# clf_cancer.imprime_arbol(nombre_atrs_cancer,"Es benigno")
-# rend_train_cancer = rendimiento(clf_cancer,Xev_cancer,yev_cancer)
-# rend_test_cancer = rendimiento(clf_cancer,Xp_cancer,yp_cancer)
-# print(f"***** Rendimiento DT cancer en train: {rend_train_cancer}")
-# print(f"***** Rendimiento DT cancer en test: {rend_test_cancer}\n\n\n")
+clf_cancer = ArbolDecision(min_ejemplos_nodo_interior=3,max_prof=10,n_atrs=15)
+clf_cancer.entrena(Xev_cancer, yev_cancer)
+nombre_atrs_cancer=['mean radius', 'mean texture', 'mean perimeter', 'mean area',
+         'mean smoothness', 'mean compactness', 'mean concavity',
+         'mean concave points', 'mean symmetry', 'mean fractal dimension',
+         'radius error', 'texture error', 'perimeter error', 'area error',
+         'smoothness error', 'compactness error', 'concavity error',
+         'concave points error', 'symmetry error',
+         'fractal dimension error', 'worst radius', 'worst texture',
+         'worst perimeter', 'worst area', 'worst smoothness',
+         'worst compactness', 'worst concavity', 'worst concave points',
+         'worst symmetry', 'worst fractal dimension']
+clf_cancer.imprime_arbol(nombre_atrs_cancer,"Es benigno")
+rend_train_cancer = rendimiento(clf_cancer,Xev_cancer,yev_cancer)
+rend_test_cancer = rendimiento(clf_cancer,Xp_cancer,yp_cancer)
+print(f"***** Rendimiento DT cancer en train: {rend_train_cancer}")
+print(f"***** Rendimiento DT cancer en test: {rend_test_cancer}\n\n\n")
 
 
 
-# print("************ RENDIMIENTOS FINALES RANDOM FOREST")
-# print("************************************************\n")
+print("************ RENDIMIENTOS FINALES RANDOM FOREST")
+print("************************************************\n")
 
 
 # # ATENCIÓN: EN CADA CASO, INCORPORAR LA MEJOR COMBINACIÓN DE HIPERPARÁMETROS 
@@ -1396,45 +1396,57 @@ print(f"********************* Rendimiento DT iris test: {rend_test_iris}\n\n\n\n
 
 
 
-# print("==== MEJOR RENDIMIENTO RANDOM FOREST SOBRE IMDB:")
-# RF_IMDB=RandomForest(?????????????????) # ATENCIÓN: incorporar aquí los mejores valoeres de los parámetros tras el ajuste
-# RF_IMDB.entrena(X_train_imdb,y_train_imdb) 
-# print("Rendimiento RF entrenamiento sobre imdb: ",rendimiento(RF_IMDB,X_train_imdb,y_train_imdb))
-# print("Rendimiento RF test sobre imdb: ",rendimiento(RF_IMDB,X_test_imdb,y_test_imdb))
-# print("\n")
+print("==== MEJOR RENDIMIENTO RANDOM FOREST SOBRE IMDB:")
+mejor_imdb, rf_imdb = ajuste_hiperparametros(
+    X_train_imdb, y_train_imdb, X_test_imdb, y_test_imdb,
+    combinaciones={"n_arboles": [5,10,15], "max_prof": [5,8,10], "n_atrs": [50,100,150]},
+    nombre="IMDB"
+)
+RF_IMDB=RandomForest(n_arboles=mejor_imdb['n_arboles'], max_prof=mejor_imdb['max_prof'], n_atrs=mejor_imdb['n_atrs']) # ATENCIÓN: incorporar aquí los mejores valoeres de los parámetros tras el ajuste
+RF_IMDB.entrena(X_train_imdb,y_train_imdb) 
+print("Rendimiento RF entrenamiento sobre imdb: ",rendimiento(RF_IMDB,X_train_imdb,y_train_imdb))
+print("Rendimiento RF test sobre imdb: ",rendimiento(RF_IMDB,X_test_imdb,y_test_imdb))
+print("\n")
 
 
 
 
-# print("==== MEJOR RENDIMIENTO RANDOM FOREST SOBRE CRÉDITO:")
+print("==== MEJOR RENDIMIENTO RANDOM FOREST SOBRE CRÉDITO:")
 
-# RF_CREDITO=RandomForest(??????????????) # ATENCIÓN: incorporar aquí los mejores valores de los parámetros tras el ajuste
-# RF_CREDITO.entrena(X_train_credito,y_train_credito) 
-# print("Rendimiento RF entrenamiento sobre crédito: ",rendimiento(RF_CREDITO,X_train_credito,y_train_credito))
-# print("Rendimiento RF  test sobre crédito: ",rendimiento(RF_CREDITO,X_test_credito,y_test_credito))
-# print("\n")
-
-
-# print("==== MEJOR RENDIMIENTO RF SOBRE ADULT:")
-
-# RF_ADULT=RandomForest(??????????????) # ATENCIÓN: incorporar aquí los mejores valores de los parámetros tras el ajuste
-# RF_ADULT.entrena(X_train_adult,y_train_adult) 
-# print("Rendimiento RF  entrenamiento sobre adult: ",rendimiento(RF_ADULT,X_train_adult,y_train_adult))
-# print("Rendimiento RF  test sobre adult: ",rendimiento(RF_ADULT,X_test_adult,y_test_adult))
-# print("\n")
+mejor_credito, rf_credito = ajuste_hiperparametros(
+    X_train_credito, y_train_credito, X_test_credito, y_test_credito,
+    combinaciones={"n_arboles": [5,10,15], "max_prof": [5,8,10], "n_atrs": [3,4,6]},
+    nombre="CRÉDITO"
+)
+RF_CREDITO=RandomForest(n_arboles=mejor_credito['n_arboles'], max_prof=mejor_credito['max_prof'], n_atrs=mejor_credito['n_atrs']) # ATENCIÓN: incorporar aquí los mejores valores de los parámetros tras el ajuste
+RF_CREDITO.entrena(X_train_credito,y_train_credito) 
+print("Rendimiento RF entrenamiento sobre crédito: ",rendimiento(RF_CREDITO,X_train_credito,y_train_credito))
+print("Rendimiento RF  test sobre crédito: ",rendimiento(RF_CREDITO,X_test_credito,y_test_credito))
+print("\n")
 
 
-# print("==== MEJOR RENDIMIENTO RL SOBRE DIGITOS:")
-# RF_DG=RandomForest(?????????????) # ATENCIÓN: incorporar aquí los mejores valors de losparámetros tras el ajuste
-# RF_DG.entrena(X_entr_dg,y_entr_dg)
-# print("Rendimiento RF entrenamiento sobre dígitos: ",rendimiento(RF_DG,X_entr_dg,y_entr_dg))
-# print("Rendimiento RF validación sobre dígitos: ",rendimiento(RF_DG,X_val_dg,y_val_dg))
-# print("Rendimiento RF test sobre dígitos: ",rendimiento(RF_DG,X_test_dg,y_test_dg))
+print("==== MEJOR RENDIMIENTO RF SOBRE ADULT:")
+
+mejor_adult, rf_adult = ajuste_hiperparametros(
+    X_train_adult, y_train_adult, X_test_adult, y_test_adult,
+    combinaciones={"n_arboles": [5,10,15], "max_prof": [5,8,10], "n_atrs": [5,8,12]},
+    nombre="ADULT"
+)
+RF_ADULT=RandomForest(n_arboles=mejor_adult['n_arboles'], max_prof=mejor_adult['max_prof'], n_atrs=mejor_adult['n_atrs']) # ATENCIÓN: incorporar aquí los mejores valores de los parámetros tras el ajuste
+RF_ADULT.entrena(X_train_adult,y_train_adult) 
+print("Rendimiento RF  entrenamiento sobre adult: ",rendimiento(RF_ADULT,X_train_adult,y_train_adult))
+print("Rendimiento RF  test sobre adult: ",rendimiento(RF_ADULT,X_test_adult,y_test_adult))
+print("\n")
 
 
-
-
-
-
-
-
+print("==== MEJOR RENDIMIENTO RL SOBRE DIGITOS:")
+mejor_dg, rf_dg = ajuste_hiperparametros(
+    X_train_dg, y_train_dg, X_test_dg, y_test_dg,
+    combinaciones={"n_arboles": [5,10,15], "max_prof": [8,10,15], "n_atrs": [20,30,50]},
+    nombre="DIGITOS"
+)
+RF_DG=RandomForest(n_arboles=mejor_dg['n_arboles'], max_prof=mejor_dg['max_prof'], n_atrs=mejor_dg['n_atrs']) # ATENCIÓN: incorporar aquí los mejores valors de losparámetros tras el ajuste
+RF_DG.entrena(X_entr_dg,y_entr_dg)
+print("Rendimiento RF entrenamiento sobre dígitos: ",rendimiento(RF_DG,X_entr_dg,y_entr_dg))
+print("Rendimiento RF validación sobre dígitos: ",rendimiento(RF_DG,X_val_dg,y_val_dg))
+print("Rendimiento RF test sobre dígitos: ",rendimiento(RF_DG,X_test_dg,y_test_dg))
