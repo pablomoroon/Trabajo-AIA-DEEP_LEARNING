@@ -13,12 +13,12 @@
 # Autor(a) del trabajo:
 #
 # APELLIDOS: MORÓN GARCÍA
-# NOMBRE: PABLO 
+# NOMBRE: PABLO
 #
 # Segundo(a) componente (si se trata de un grupo):
 #
 # APELLIDOS: VARGAS BELLIDO
-# NOMBRE: JUAN MANUEL
+# NOMBRE: JUAN MANUEL 
 # ----------------------------------------------------------------------------
 
 
@@ -81,7 +81,6 @@
 import math
 import random
 import numpy as np
-from sklearn.model_selection import train_test_split
 
 
 
@@ -95,7 +94,6 @@ from sklearn.model_selection import train_test_split
 # que este archivo) Y CARGARLOS CON LA SIGUIENTE ORDEN:
     
 from carga_datos import *    
-
 
 # Como consecuencia de la línea anterior, se habrán cargado los siguientes 
 # conjuntos de datos, que pasamos a describir, junto con los nombres de las 
@@ -247,13 +245,6 @@ from carga_datos import *
 # ------------------------------------------------------------------
 
 def particion_entr_prueba(X, y, test=0.20):
-    """
-    Divide X e y en entrenamiento y prueba de forma aleatoria y estratificada.
-
-    Devuelve:
-        X_entrenamiento, X_prueba, y_entrenamiento, y_prueba
-    """
-
     if test <= 0 or test >= 1:
         raise ValueError("El valor de test debe estar entre 0 y 1")
 
@@ -278,7 +269,6 @@ def particion_entr_prueba(X, y, test=0.20):
     indices_test = np.array(sorted(indices_test))
 
     return X[indices_train], X[indices_test], y[indices_train].ravel(), y[indices_test].ravel()
-
 
 
 
@@ -309,14 +299,14 @@ X_train_iris, X_test_iris, y_train_iris, y_test_iris = particion_entr_prueba(X_i
 # implementación de los nodos:
     
 class Nodo:
-    def __init__(self, atributo=None, umbral=None, izq=None, der=None, distr=None, *, clase=None):
+    def __init__(self, atributo=None, umbral=None, izq=None, der=None,distr=None,*,clase=None):
         self.atributo = atributo
         self.umbral = umbral
         self.izq = izq
         self.der = der
-        self.distr = distr
+        self.distr= distr
         self.clase = clase
-
+        
     def es_hoja(self):
         return self.clase is not None
 
@@ -368,6 +358,8 @@ class Nodo:
 #                 como hijos izquierdo y derecho respectivamente.
 
 
+
+
 # Lo anterior es la descripción básica. A continuación indicamos una serie de variantes y
 # cuestiones adicionales que se le piden a esta implementación concreta:
 
@@ -409,7 +401,6 @@ class Nodo:
 #         nodo es de 200 ejemplos, entonces aplicaremos el proceso de selección de
 #         umbrales candidatos descrito en (a) considerando sólo un suconjunto de 140
 #         ejemplos seleccionado aleatoriamente de entre esos 200.  
-
 
 def CONSTRUYE_ARBOL(X, y, atributos_candidatos, min_ejemplos_nodo_interior, max_prof, prop_umbral, prof=0):
     y = np.array(y).ravel()
@@ -457,15 +448,6 @@ def CONSTRUYE_ARBOL(X, y, atributos_candidatos, min_ejemplos_nodo_interior, max_
         distr=distr
     )
 
-#prop_umbral es la proporción de ejemplos a considerar para elegir los umbrales 
-# candidatos. Por ejemplo, si prop_umbral es 0.7 y el conjunto de ejemplos 
-# correspondientes al nodo es de 200 ejemplos, entonces aplicaremos el proceso
-#  de selección de umbrales candidatos considerando sólo un suconjunto de 140
-# ejemplos seleccionado aleatoriamente de entre esos 200.
-
-#Definimos la funcion mejor_particion que encuentra el mejor atributo y umbral
-# para la partición de los nodos interiores, usando el criterio de mejor GANANCIA 
-# DE INFORMACIÓN, y considerando sólo como candidatos a umbral los puntos medios
 def mejor_particion(X, y, atributos_candidatos, prop_umbral):
     mejor_ganancia = 0
     mejor_atributo = None
@@ -495,13 +477,8 @@ def mejor_particion(X, y, atributos_candidatos, prop_umbral):
 
     return mejor_atributo, mejor_umbral
 
-#definimos la función ganancia que calcula la ganancia de información de una
-#partición dada por un atributo y un umbral, a partir de los conjuntos de ejemplos
 def ganancia(y,y_izq,y_der):
     n=len(y)
-    #la ganancia se calcula como la entropía de y menos la media ponderada de 
-    # las entropías de y_izq e y_der, ponderada por el número de ejemplos que hay
-    #  en cada uno de esos conjuntos
     return entropia(y) - (len(y_izq)/n)*entropia(y_izq) - (len(y_der)/n)*entropia(y_der)
 
 def umbrales(X, y, prop_umbral):
@@ -509,10 +486,6 @@ def umbrales(X, y, prop_umbral):
 
     n_muestras = max(1, int(round(n * prop_umbral)))
     n_muestras = min(n_muestras, n)
-
-    # Esta limitación evita que Adult, IMDB y dígitos tarden demasiado.
-    # Se siguen seleccionando ejemplos aleatoriamente, pero no se evalúan miles
-    # de posibles puntos de corte en cada atributo de cada nodo.
     n_muestras = min(n_muestras, 800)
 
     indices_muestra = np.random.choice(n, size=n_muestras, replace=False)
@@ -536,21 +509,30 @@ def umbrales(X, y, prop_umbral):
 
 
 def entropia(y):
-    #Ponemos _ para indicar que no nos interesa el valor de las clases,
-    # sino sólo sus frecuencias
     _, counts = np.unique(y, return_counts=True)
-    # Calculamos la entropía
     probs = counts / len(y)
-    #Ponemos log para que el resultado sea 0 cuando la probabilidad es 0, aunque en principio no debería haber probabilidades 0, porque sólo se consideran umbrales entre valores de clases distintas
     return -np.sum(probs * np.log2(probs))
-
-
-
-
 
 # Con las descripciones anteriores, ya podemos precisar lo que se pide en eset apartado. 
 # Se pide implementar una clase ArbolDecision con el siguiente formato:
   
+
+# class ArbolDecision:
+#     def __init__(self, min_ejemplos_nodo_interior=5, max_prof=10,n_atrs=10,prop_umbral=1.0):
+#         ......
+#                
+#     def entrena(self, X, y):
+#         .......
+#        
+#     def clasifica(self, X):
+#         .......
+#
+#     def clasifica_prob(self, x):
+#         .......
+#
+#     def imprime_arbol(self,nombre_atrs,nombre_clase) :
+#         .......
+
 
 
 #  El constructor tiene los siguientes argumentos de entrada:
@@ -586,12 +568,11 @@ def entropia(y):
 
 # Si se llama al método de clasificación, o al de impresión, antes de entrenar el modelo,
 # se debe devolver (con raise) una excepción:
+
+class ClasificadorNoEntrenado(Exception): pass
+
 class ArbolDecisionNoEntrenado(Exception): 
-    pass
-
-class ClasificadorNoEntrenado(Exception):
-    pass
-
+    pass        
 
 class ArbolDecision:
     def __init__(self, min_ejemplos_nodo_interior=5, max_prof=10, n_atrs=10, prop_umbral=1.0):
@@ -925,6 +906,7 @@ def rendimiento(clasif,X,y):
 
 
 
+
 # =============================================
 # EJERCICIO 3: IMPLEMENTACIÓN DE RANDOM FORESTS
 # =============================================
@@ -992,8 +974,6 @@ def rendimiento(clasif,X,y):
 
 #------------------------------------------------------------------------------
 
-
-
 class RandomForest:
     def __init__(self, n_arboles=5, prop_muestras=1.0,
                  min_ejemplos_nodo_interior=5, max_prof=10, n_atrs=10, prop_umbral=1.0):
@@ -1017,8 +997,6 @@ class RandomForest:
         prop_umbral_efectiva = self.prop_umbral
         min_ejemplos_efectivo = self.min_ejemplos_nodo_interior
 
-        # Si el usuario no ha indicado valores más ligeros y el dataset es grande,
-        # se ajustan automáticamente para que el entrenamiento sea razonable.
         if n > 1000:
             if prop_muestras_efectiva == 1.0:
                 prop_muestras_efectiva = 0.5
@@ -1029,7 +1007,6 @@ class RandomForest:
 
         n_muestras = max(1, int(round(n * prop_muestras_efectiva)))
 
-        # Cota práctica para Adult y dígitos.
         if n > 5000:
             n_muestras = min(n_muestras, 3000)
 
@@ -1062,11 +1039,6 @@ class RandomForest:
 
         return np.array(predicciones)
     
-
-
-
-
-
 
 
 
@@ -1121,13 +1093,8 @@ import pandas as pd
 # * X_train_credito, y_train_credito, X_test_credito, y_test_credito
 #   conteniendo el dataset de crédito con los atributos numñericos:
 
-# ------------------------------------------------
-# Dataset de crédito
-# ------------------------------------------------
-
 from datos.credito import *
 
-# Buscamos automáticamente la variable que contiene la lista de datos
 datos_credito = None
 
 for nombre in list(globals()):
@@ -1143,7 +1110,6 @@ if datos_credito is None:
 
 datos_credito = np.array(datos_credito)
 
-# Separamos en atributos y etiquetas
 X_credito = datos_credito[:, :6]
 y_credito = datos_credito[:, -1]
 
@@ -1168,16 +1134,14 @@ X_train_credito, X_test_credito, y_train_credito, y_test_credito = particion_ent
 
 datos_adult = pd.read_csv("datos/adultDataset.csv")
 
-# Quitamos espacios en blanco en las columnas de texto
 datos_adult = datos_adult.replace(r"^\s+|\s+$", "", regex=True)
 
 X_adult = datos_adult.iloc[:, :-1].copy()
 y_adult = datos_adult.iloc[:, -1].values
 
-# Las cuatro primeras columnas ya son numéricas
 X_adult_numericas = X_adult.iloc[:, :4].values.astype(float)
 
-# Desde la quinta columna en adelante son categóricas
+
 X_adult_categoricas = X_adult.iloc[:, 4:].values
 
 codificador_adult = OrdinalEncoder()
@@ -1194,7 +1158,6 @@ X_train_adult, X_test_adult, y_train_adult, y_test_adult = particion_entr_prueba
     test=0.25
 )
 
-# Por seguridad, forzamos que las y sean arrays de numpy
 y_train_adult = np.array(y_train_adult)
 y_test_adult = np.array(y_test_adult)
 
@@ -1258,6 +1221,10 @@ y_val_dg = y_valid_dg
 
 
 
+
+
+
+
 # -----------------------------
 # 4.2 AJUSTE DE HIPERPARÁMETROS     
 # -----------------------------
@@ -1288,18 +1255,7 @@ y_val_dg = y_valid_dg
 
 # ----------------------------
 
-
-# print("\n=============================="
-#       "\nAjuste de hiperparámetros para Random Forest"
-#       "\n==============================")
-
 def ajuste_hiperparametros(X_train, y_train, X_test, y_test, combinaciones, nombre=""):
-    """
-    Ajuste rápido de hiperparámetros usando validación interna.
-
-    X_test e y_test se reciben porque el bloque final llama así a la función,
-    pero no se usan para elegir hiperparámetros.
-    """
 
     print("\n==============================")
     print("Ajustando:", nombre)
@@ -1362,13 +1318,15 @@ def ajuste_hiperparametros(X_train, y_train, X_test, y_test, combinaciones, nomb
 
     return mejor_combinacion, mejor_modelo
 
-# CÁNCER
-Xev_cancer, Xp_cancer, yev_cancer, yp_cancer = particion_entr_prueba(X_cancer, y_cancer, test=0.2)
-mejor_cancer, rf_cancer = ajuste_hiperparametros(
-    Xev_cancer, yev_cancer, Xp_cancer, yp_cancer,
-    combinaciones={"n_arboles": [5,10,15], "max_prof": [5,8,10], "n_atrs": [10,15,20]},
-    nombre="Cáncer"
-)
+
+
+
+
+
+
+
+
+
 # ********************************************************************************
 # ********************************************************************************
 # ********************************************************************************
@@ -1451,7 +1409,6 @@ print(f"****** Rendimiento DT votos en train: {rend_train_votos}")
 print(f"****** Rendimiento DT votos en test:  {rend_test_votos}\n\n\n\n")
 
 
-
 clf_iris = ArbolDecision(max_prof=3,n_atrs=4)
 clf_iris.entrena(X_train_iris, y_train_iris)
 clf_iris.imprime_arbol(["Long. Sépalo", "Anch. Sépalo", "Long. Pétalo", "Anch. Pétalo"],"Clase")
@@ -1467,15 +1424,15 @@ print(f"********************* Rendimiento DT iris test: {rend_test_iris}\n\n\n\n
 clf_cancer = ArbolDecision(min_ejemplos_nodo_interior=3,max_prof=10,n_atrs=15)
 clf_cancer.entrena(Xev_cancer, yev_cancer)
 nombre_atrs_cancer=['mean radius', 'mean texture', 'mean perimeter', 'mean area',
-         'mean smoothness', 'mean compactness', 'mean concavity',
-         'mean concave points', 'mean symmetry', 'mean fractal dimension',
-         'radius error', 'texture error', 'perimeter error', 'area error',
-         'smoothness error', 'compactness error', 'concavity error',
-         'concave points error', 'symmetry error',
-         'fractal dimension error', 'worst radius', 'worst texture',
-         'worst perimeter', 'worst area', 'worst smoothness',
-         'worst compactness', 'worst concavity', 'worst concave points',
-         'worst symmetry', 'worst fractal dimension']
+        'mean smoothness', 'mean compactness', 'mean concavity',
+        'mean concave points', 'mean symmetry', 'mean fractal dimension',
+        'radius error', 'texture error', 'perimeter error', 'area error',
+        'smoothness error', 'compactness error', 'concavity error',
+        'concave points error', 'symmetry error',
+        'fractal dimension error', 'worst radius', 'worst texture',
+        'worst perimeter', 'worst area', 'worst smoothness',
+        'worst compactness', 'worst concavity', 'worst concave points',
+        'worst symmetry', 'worst fractal dimension']
 clf_cancer.imprime_arbol(nombre_atrs_cancer,"Es benigno")
 rend_train_cancer = rendimiento(clf_cancer,Xev_cancer,yev_cancer)
 rend_test_cancer = rendimiento(clf_cancer,Xp_cancer,yp_cancer)
@@ -1494,11 +1451,13 @@ print("************************************************\n")
 
 
 print("==== MEJOR RENDIMIENTO RANDOM FOREST SOBRE IMDB:")
+
 mejor_imdb, rf_imdb = ajuste_hiperparametros(
     X_train_imdb, y_train_imdb, X_test_imdb, y_test_imdb,
     combinaciones={"n_arboles": [5,10,15], "max_prof": [5,8,10], "n_atrs": [50,100,150]},
     nombre="IMDB"
 )
+
 RF_IMDB=RandomForest(n_arboles=mejor_imdb['n_arboles'], max_prof=mejor_imdb['max_prof'], n_atrs=mejor_imdb['n_atrs']) # ATENCIÓN: incorporar aquí los mejores valoeres de los parámetros tras el ajuste
 RF_IMDB.entrena(X_train_imdb,y_train_imdb) 
 print("Rendimiento RF entrenamiento sobre imdb: ",rendimiento(RF_IMDB,X_train_imdb,y_train_imdb))
@@ -1515,6 +1474,7 @@ mejor_credito, rf_credito = ajuste_hiperparametros(
     combinaciones={"n_arboles": [5,10,15], "max_prof": [5,8,10], "n_atrs": [3,4,6]},
     nombre="CRÉDITO"
 )
+
 RF_CREDITO=RandomForest(n_arboles=mejor_credito['n_arboles'], max_prof=mejor_credito['max_prof'], n_atrs=mejor_credito['n_atrs']) # ATENCIÓN: incorporar aquí los mejores valores de los parámetros tras el ajuste
 RF_CREDITO.entrena(X_train_credito,y_train_credito) 
 print("Rendimiento RF entrenamiento sobre crédito: ",rendimiento(RF_CREDITO,X_train_credito,y_train_credito))
@@ -1529,6 +1489,7 @@ mejor_adult, rf_adult = ajuste_hiperparametros(
     combinaciones={"n_arboles": [5,10,15], "max_prof": [5,8,10], "n_atrs": [5,8,12]},
     nombre="ADULT"
 )
+
 RF_ADULT=RandomForest(n_arboles=mejor_adult['n_arboles'], max_prof=mejor_adult['max_prof'], n_atrs=mejor_adult['n_atrs']) # ATENCIÓN: incorporar aquí los mejores valores de los parámetros tras el ajuste
 RF_ADULT.entrena(X_train_adult,y_train_adult) 
 print("Rendimiento RF  entrenamiento sobre adult: ",rendimiento(RF_ADULT,X_train_adult,y_train_adult))
@@ -1537,13 +1498,23 @@ print("\n")
 
 
 print("==== MEJOR RENDIMIENTO RL SOBRE DIGITOS:")
+
 mejor_dg, rf_dg = ajuste_hiperparametros(
     X_train_dg, y_train_dg, X_test_dg, y_test_dg,
     combinaciones={"n_arboles": [5,10,15], "max_prof": [8,10,15], "n_atrs": [20,30,50]},
     nombre="DIGITOS"
 )
+
 RF_DG=RandomForest(n_arboles=mejor_dg['n_arboles'], max_prof=mejor_dg['max_prof'], n_atrs=mejor_dg['n_atrs']) # ATENCIÓN: incorporar aquí los mejores valors de losparámetros tras el ajuste
 RF_DG.entrena(X_entr_dg,y_entr_dg)
 print("Rendimiento RF entrenamiento sobre dígitos: ",rendimiento(RF_DG,X_entr_dg,y_entr_dg))
 print("Rendimiento RF validación sobre dígitos: ",rendimiento(RF_DG,X_val_dg,y_val_dg))
 print("Rendimiento RF test sobre dígitos: ",rendimiento(RF_DG,X_test_dg,y_test_dg))
+
+
+
+
+
+
+
+
